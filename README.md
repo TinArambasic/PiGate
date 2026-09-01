@@ -1,6 +1,7 @@
 # PiGate
 
 Automatski sustav otvaranja ograde temeljen na prepoznavanju tablica vozila, izrađen na Raspberry Pi 5.
+Test prototipa i demonstracija funkcionalnosti dostupna je na https://www.youtube.com/watch?v=2ENTelC4J9A
 
 ## O projektu
 
