@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiGate — Logovi</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+
+        nav { background: #1a1d27; border-bottom: 1px solid #2d3148; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        nav .logo { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+        nav .logo span { color: #6366f1; }
+        nav .links a { color: #94a3b8; text-decoration: none; margin-left: 24px; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+        nav .links a:hover, nav .links a.active { color: #fff; }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .page-subtitle { color: #64748b; font-size: 14px; margin-bottom: 32px; }
+
+        .card { background: #1a1d27; border: 1px solid #2d3148; border-radius: 12px; padding: 24px; }
+        .card-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; margin-bottom: 16px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 10px 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #475569; border-bottom: 1px solid #2d3148; }
+        td { padding: 14px 12px; font-size: 14px; border-bottom: 1px solid #1e2235; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #1e2235; }
+
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+        .badge-plate { background: #6366f120; color: #818cf8; font-family: monospace; font-size: 13px; }
+        .badge-allowed { background: #22c55e20; color: #4ade80; }
+        .badge-denied { background: #ef444420; color: #f87171; }
+
+        .empty { text-align: center; padding: 48px; color: #475569; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="logo">Pi<span>Gate</span></div>
+        <div class="links">
+            <a href="/">Tablice</a>
+            <a href="/logs" class="active">Logovi</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-title">Logovi pristupa</div>
+        <div class="page-subtitle">Povijest svih detektiranih vozila</div>
+
+        <div class="card">
+            <div class="card-title">Zapisi</div>
+            {% if logs %}
+            <table>
+                <tr>
+                    <th>Registracija</th>
+                    <th>Status</th>
+                    <th>Confidence</th>
+                    <th>Smjer</th>
+                    <th>Vrijeme</th>
+                </tr>
+                {% for log in logs %}
+                <tr>
+                    <td><span class="badge badge-plate">{{ log.plate_number }}</span></td>
+                    <td>
+                        {% if log.recognized %}
+                        <span class="badge badge-allowed">Dopušteno</span>
+                        {% else %}
+                        <span class="badge badge-denied">Odbijeno</span>
+                        {% endif %}
+                    </td>
+                    <td style="color:#64748b;">{{ "%.0f%%"|format(log.confidence * 100) if log.confidence else '—' }}</td>
+                    <td style="color:#64748b;">{{ log.direction }}</td>
+                    <td style="color:#64748b;">{{ log.timestamp[:16].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <div class="empty">Nema zabilježenih pristupa.</div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

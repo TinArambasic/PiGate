@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiGate</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+        nav { background: #1a1d27; border-bottom: 1px solid #2d3148; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        nav .logo { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+        nav .logo span { color: #6366f1; }
+        nav .links a { color: #94a3b8; text-decoration: none; margin-left: 24px; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+        nav .links a:hover, nav .links a.active { color: #fff; }
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .page-subtitle { color: #64748b; font-size: 14px; margin-bottom: 32px; }
+        .card { background: #1a1d27; border: 1px solid #2d3148; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+        .card-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; margin-bottom: 16px; }
+        .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+        .form-input { flex: 1; min-width: 160px; background: #0f1117; border: 1px solid #2d3148; border-radius: 8px; padding: 10px 14px; color: #e2e8f0; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        .form-input:focus { border-color: #6366f1; }
+        .form-input::placeholder { color: #475569; }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: #6366f1; color: #fff; }
+        .btn-primary:hover { background: #5254cc; }
+        .btn-danger { background: #1a1d27; color: #ef4444; border: 1px solid #2d3148; padding: 6px 12px; font-size: 12px; }
+        .btn-danger:hover { background: #ef444420; border-color: #ef4444; }
+        .btn-green { background: #16a34a; color: #fff; }
+        .btn-green:hover { background: #15803d; }
+        .btn-red { background: #dc2626; color: #fff; }
+        .btn-red:hover { background: #b91c1c; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 10px 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #475569; border-bottom: 1px solid #2d3148; }
+        td { padding: 14px 12px; font-size: 14px; border-bottom: 1px solid #1e2235; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #1e2235; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+        .badge-plate { background: #6366f120; color: #818cf8; font-family: monospace; font-size: 13px; letter-spacing: 0.05em; }
+        .empty { text-align: center; padding: 48px; color: #475569; font-size: 14px; }
+        .gate-buttons { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+        #camera-stream { width: 100%; max-width: 500px; border-radius: 8px; margin-top: 16px; }
+        #gate-status { font-size: 13px; color: #64748b; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="logo">Pi<span>Gate</span></div>
+        <div class="links">
+            <a href="/" class="active">Tablice</a>
+            <a href="/logs">Logovi</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-title">Upravljanje tablicama</div>
+        <div class="page-subtitle">Dodaj ili ukloni registracije kojima je dozvoljen pristup</div>
+
+        <div class="card">
+            <div class="card-title">Upravljanje vratima</div>
+            <div class="gate-buttons">
+                <button class="btn btn-green" onclick="gateAction('open')">Otvori vrata</button>
+                <button class="btn btn-red" onclick="gateAction('close')">Zatvori vrata</button>
+                <button class="btn btn-primary" onclick="toggleCamera(this)">Uključi preview</button>
+            </div>
+            <div id="gate-status"></div>
+            <img id="camera-stream" src="" style="display:none;">
+        </div>
+
+        <div class="card">
+            <div class="card-title">Dodaj tablicu</div>
+            <form action="/add_plate" method="POST">
+                <div class="form-row">
+                    <input class="form-input" type="text" name="plate_number" placeholder="Registracija (npr. OS123AB)" required>
+                    <input class="form-input" type="text" name="owner_name" placeholder="Ime vlasnika (opcionalno)">
+                    <button class="btn btn-primary" type="submit">Dodaj</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Dozvoljene tablice</div>
+            {% if plates %}
+            <table>
+                <tr>
+                    <th>Registracija</th>
+                    <th>Vlasnik</th>
+                    <th>Dodano</th>
+                    <th></th>
+                </tr>
+                {% for plate in plates %}
+                <tr>
+                    <td><span class="badge badge-plate">{{ plate.plate_number }}</span></td>
+                    <td>{{ plate.owner_name or '—' }}</td>
+                    <td style="color:#64748b;">{{ plate.added_at[:16].replace('T', ' ') }}</td>
+                    <td>
+                        <form action="/delete_plate/{{ plate.id }}" method="POST">
+                            <button class="btn btn-danger" type="submit">Ukloni</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <div class="empty">Nema dodanih tablica.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        let cameraOn = false;
+
+        function toggleCamera(btn) {
+            cameraOn = !cameraOn;
+            const img = document.getElementById('camera-stream');
+            if (cameraOn) {
+                img.src = '/video_feed';
+                img.style.display = 'block';
+                btn.textContent = 'Isključi preview';
+            } else {
+                img.src = '';
+                img.style.display = 'none';
+                btn.textContent = 'Uključi preview';
+            }
+        }
+
+        function gateAction(action) {
+            const status = document.getElementById('gate-status');
+            status.textContent = action === 'open' ? 'Otvaranje vrata...' : 'Zatvaranje vrata...';
+            fetch('/gate/' + action, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    status.textContent = data.status === 'error' ? 'Greška: ' + data.message : (action === 'open' ? 'Vrata se otvaraju.' : 'Vrata se zatvaraju.');
+                });
+        }
+    </script>
+</body>
+</html>
